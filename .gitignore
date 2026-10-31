@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+/auth.json
+/vendor/
+/var/
+/.phpunit.result.cache
+/.idea/
+/.aws/
+/.codex/
+/.agents/

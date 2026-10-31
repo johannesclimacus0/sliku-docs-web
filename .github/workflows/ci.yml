@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: PHP checks and tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: slim_test
+          POSTGRES_USER: slim
+          POSTGRES_PASSWORD: ci-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U slim -d slim_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DB_NAME: slim_test
+      DB_USER: slim
+      DB_PASSWORD: ci-only-password
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_pgsql, redis, mbstring, intl, dom, xml, xmlwriter, fileinfo
+          coverage: none
+          tools: composer:v2
+      - name: Install locked PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Validate Composer files
+        run: composer validate --no-check-publish
+      - name: Check PHP formatting
+        run: php vendor/bin/php-cs-fixer fix --dry-run --diff --sequential
+      - name: Prepare isolated test database
+        run: php bin/test-database
+      - name: Run PHP tests
+        run: php vendor/bin/phpunit --testsuite Isolated,Integration --fail-on-risky --fail-on-phpunit-deprecation
+
+  frontend:
+    name: Vue checks and build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install locked frontend dependencies
+        run: npm ci
+      - name: Check frontend lint
+        run: npm run check:lint
+      - name: Check TypeScript and build production assets
+        run: npm run build

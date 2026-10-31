@@ -1,0 +1,40 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use App\Console\UI\ComposeRunner;
+use App\Console\UI\Dashboard;
+use Dotenv\Dotenv;
+use Symfony\Component\Process\Process;
+use Symfony\Component\Tui\Tui;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+if (in_array('--help', $argv, true) || in_array('-h', $argv, true)) {
+    echo "Usage: ./run ui\n\nInteractive local Docker dashboard. Requires host PHP 8.5+, Docker Compose and a TTY.\n";
+    echo "Controls: arrows + Enter menu, a art, l logs, q quit. Logs: / search, f level, p pause, Enter details. Jobs: Tab + Enter details, t retry, d delete, y/n confirm.\n";
+    echo "Commands: custom host/app/frontend shell with session history, generators, checks, migrations and detached Vite controls.\n";
+    exit(0);
+}
+if (!class_exists(Tui::class) || !class_exists(Process::class)) {
+    fwrite(STDERR, "Install UI dependencies first:\n./run composer require --dev symfony/tui:^8.1 symfony/process:^8.1\n");
+    exit(1);
+}
+if (!stream_isatty(STDIN) || !stream_isatty(STDOUT) || getenv('TERM') === 'dumb') {
+    fwrite(STDERR, "The dashboard needs an interactive terminal. Run ./run ui without pipes or redirection.\n");
+    exit(1);
+}
+try {
+    Dotenv::createImmutable(dirname(__DIR__))->safeLoad();
+    $externalName = getenv('APP_NAME');
+    $appName = $externalName !== false ? $externalName : ($_ENV['APP_NAME'] ?? 'Application');
+    new Dashboard(new ComposeRunner(dirname(__DIR__)), appName: $appName)->run();
+} catch (Throwable $error) {
+    while ($error->getPrevious() !== null) {
+        $error = $error->getPrevious();
+    }
+    fwrite(STDERR, 'Dashboard stopped: ' . get_debug_type($error) . ': ' . $error->getMessage() .
+        ' at ' . $error->getFile() . ':' . $error->getLine() . "\n");
+    exit(1);
+}

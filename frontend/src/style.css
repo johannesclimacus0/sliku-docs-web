@@ -1,0 +1,61 @@
+@import 'tailwindcss';
+
+@theme {
+    --color-ink: #282828;
+    --color-muted: #707070;
+    --color-line: #e5e5e5;
+    --color-control: #d5d5d5;
+    --font-sans: system-ui, -apple-system, sans-serif;
+    --font-mono: ui-monospace, monospace;
+}
+
+@layer base {
+    body {
+        @apply bg-white font-sans text-sm leading-normal text-ink;
+        font-synthesis: none;
+    }
+
+    button {
+        @apply cursor-pointer disabled:cursor-not-allowed disabled:opacity-45;
+    }
+
+    a:hover {
+        @apply underline;
+    }
+
+    :focus-visible {
+        @apply outline-2 outline-solid outline-offset-[3px] outline-[#777];
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+        @apply mb-3;
+    }
+
+    h1 {
+        @apply text-2xl font-[550] tracking-[-0.5px];
+    }
+
+    h2 {
+        @apply text-[15px] font-semibold;
+    }
+
+    h3 {
+        @apply text-sm font-semibold;
+    }
+
+    small {
+        @apply text-xs;
+    }
+
+    code,
+    pre {
+        @apply font-mono;
+    }
+
+    code {
+        @apply [overflow-wrap:anywhere];
+    }
+}

@@ -1,0 +1,40 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use App\Config\Config;
+use Doctrine\Migrations\Configuration\EntityManager\ExistingEntityManager;
+use Doctrine\Migrations\Configuration\Migration\PhpFile;
+use Doctrine\Migrations\DependencyFactory;
+use Doctrine\Migrations\Metadata\Storage\TableMetadataStorageConfiguration;
+use Doctrine\Migrations\Tools\Console\ConsoleRunner;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+Dotenv\Dotenv::createImmutable(dirname(__DIR__))->safeLoad();
+
+$container = (require dirname(__DIR__) . '/config/container.php')();
+
+$entityManager = $container->get(\Doctrine\ORM\EntityManager::class);
+
+$dependencyFactory = DependencyFactory::fromEntityManager(
+    new PhpFile(dirname(__DIR__) . '/database/migration.php'),
+    new ExistingEntityManager($entityManager),
+);
+
+$cli = ConsoleRunner::createApplication([], $dependencyFactory);
+$metadata = $dependencyFactory->getConfiguration()->getMetadataStorageConfiguration();
+
+if ($metadata instanceof TableMetadataStorageConfiguration) {
+    $tables = array_map(
+        static fn (string $table): string => preg_quote($table, '~'),
+        [...$container->get(Config::class)->get('database.unmanaged_tables'), $metadata->getTableName()],
+    );
+
+    $cli->find('migrations:diff')->getDefinition()->getOption('filter-expression')->setDefault(
+        '~^(?!(?:.*\.)?(?:' . implode('|', $tables) . ')$)~',
+    );
+}
+
+$cli->run();

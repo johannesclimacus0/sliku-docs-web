@@ -1,0 +1,24 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+require dirname(__DIR__) . '/app/Bootstrap/ProjectSetup.php';
+
+if (in_array('--help', $argv, true) || in_array('-h', $argv, true)) {
+    echo "Usage: ./run setup\nPrepares .env, missing keys and runtime directories. Keeps existing values.\nDoes not install dependencies, start services, run migrations or seed data.\n";
+    exit(0);
+}
+if (count($argv) > 1) {
+    fwrite(STDERR, "Unknown option. Use ./run setup --help\n");
+    exit(1);
+}
+try {
+    $result = new App\Bootstrap\ProjectSetup(dirname(__DIR__))->run();
+    echo $result['environment_created'] ? ".env created\n" : ".env preserved\n";
+    echo $result['generated_keys'] === [] ? "Keys already configured\n" : 'Generated keys: ' . implode(', ', $result['generated_keys']) . "\n";
+    echo "Runtime directories ready\n\nNext: ./run up -d --build\nThen: ./run composer install\nMigrations: ./run migrate --no-interaction\nOptional demo data: ./run console db:seed\n";
+} catch (Throwable $error) {
+    fwrite(STDERR, 'Setup failed: ' . $error->getMessage() . "\n");
+    exit(1);
+}

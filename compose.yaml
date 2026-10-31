@@ -1,0 +1,127 @@
+services:
+  frontend:
+    image: node:24-bookworm-slim
+    profiles: ["frontend"]
+    working_dir: /app/frontend
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      - ./:/app
+    environment:
+      npm_config_cache: /tmp/npm-cache
+      API_PROXY_TARGET: http://nginx
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173", "--strictPort"]
+    ports:
+      - "127.0.0.1:5173:5173"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5173').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+  nginx:
+    image: nginx:stable-alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/app:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      - ./:/app
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      - ./:/app
+    env_file:
+      - .env
+    command: ["php", "bin/console", "queue:work", "async", "--time-limit=3600", "--memory-limit=128M", "--keepalive=30", "--no-interaction"]
+    restart: unless-stopped
+    stop_grace_period: 60s
+    profiles: ["queue"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:?DB_NAME is required}
+      POSTGRES_USER: ${DB_USER:?DB_USER is required}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  redis:
+    image: redis:latest
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  swagger-ui:
+    image: docker.swagger.io/swaggerapi/swagger-ui
+    ports:
+      - "8081:8080"
+    environment:
+      SWAGGER_JSON: /docs/openapi.yaml
+      WITH_CREDENTIALS: "true"
+    volumes:
+      - ./docs/openapi.yaml:/docs/openapi.yaml:ro
+
+  centrifugo:
+    image: centrifugo/centrifugo:v6
+    profiles: ["realtime"]
+    command: ["centrifugo", "--config=/centrifugo/config.json"]
+    volumes:
+      - ./docker/centrifugo/config.json:/centrifugo/config.json:ro
+    environment:
+      CENTRIFUGO_CLIENT_TOKEN_HMAC_SECRET_KEY: ${BROADCAST_TOKEN_KEY:-}
+      CENTRIFUGO_HTTP_API_KEY: ${BROADCAST_API_KEY:-}
+    ports:
+      - "127.0.0.1:8000:8000"
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "127.0.0.1:8025:8025"
+
+volumes:
+  postgres_data:

@@ -1,0 +1,11 @@
+# Installed dependencies and production build
+/node_modules/
+/dist/
+
+# ESLint and temporary Vite config bundles
+/.eslintcache
+/vite.config.*.timestamp-*.mjs
+
+# Local editor settings; shared extension recommendations stay in Git
+/.vscode/*
+!/.vscode/extensions.json

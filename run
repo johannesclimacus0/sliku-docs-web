@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+
+set -e
+
+cd "$(dirname "$0")"
+
+case "${1:-}" in
+    art:editor)
+        shift
+        if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+            echo 'Usage: ./run art:editor [port] (default 8090). Local read-only server; exports are saved by the browser.'
+            exit 0
+        fi
+        editor_port="${1:-8090}"
+        if [[ $# -gt 1 || ! "$editor_port" =~ ^[0-9]{1,5}$ ]] || (( 10#$editor_port < 1024 || 10#$editor_port > 65535 )); then
+            echo 'Choose a port from 1024 to 65535.' >&2
+            exit 1
+        fi
+        if ! command -v php >/dev/null 2>&1; then
+            echo 'The art editor needs PHP 8.5+ on the host.' >&2
+            exit 1
+        fi
+        echo "Miku editor: http://localhost:$editor_port (Ctrl+C to stop)"
+        exec php -S "127.0.0.1:$editor_port" -t tools/art-editor tools/art-editor/router.php
+        ;;
+
+    setup)
+        shift
+        if ! command -v php >/dev/null 2>&1; then
+            echo 'Initial setup needs PHP on the host.' >&2
+            exit 1
+        fi
+        exec php bin/setup "$@"
+        ;;
+
+    ui)
+        shift
+        if ! command -v php >/dev/null 2>&1; then
+            echo 'The terminal UI needs PHP 8.5+ on the host.' >&2
+            exit 1
+        fi
+        exec php bin/ui "$@"
+        ;;
+
+    format)
+        shift
+        docker compose exec -T app php vendor/bin/php-cs-fixer fix "$@"
+        ;;
+
+    format:check)
+        shift
+        docker compose exec -T app php vendor/bin/php-cs-fixer fix --dry-run --diff "$@"
+        ;;
+
+    cs-fixer)
+        shift
+        docker compose exec -T app php vendor/bin/php-cs-fixer "$@"
+        ;;
+    fresh)
+        shift
+        docker compose stop worker
+        docker compose exec -T app php bin/fresh "$@"
+        ;;
+    test:isolated)
+        shift
+        docker compose exec -T app php vendor/bin/phpunit --testsuite Isolated "$@"
+        ;;
+
+    test:prepare)
+        shift
+        docker compose exec -T app php bin/test-database "$@"
+        ;;
+
+    test:integration)
+        shift
+        docker compose exec -T app php bin/test-database
+        docker compose exec -T app php vendor/bin/phpunit --testsuite Integration "$@"
+        ;;
+
+    test:all)
+        shift
+        docker compose exec -T app php bin/test-database
+        docker compose exec -T app php vendor/bin/phpunit --testsuite Isolated,Integration "$@"
+        ;;
+
+    test)
+        shift
+        docker compose exec -T app php vendor/bin/phpunit "$@"
+        ;;
+
+    migrate)
+        shift
+        docker compose exec -T app php bin/doctrine migrations:migrate "$@"
+        ;;
+
+    migrate:test)
+        shift
+        docker compose exec -T \
+            -e APP_ENV=testing \
+            -e DB_NAME=slim_test \
+            app php bin/doctrine migrations:migrate "$@"
+        ;;
+
+    doctrine)
+        shift
+        docker compose exec -T app php bin/doctrine "$@"
+        ;;
+
+    console)
+        shift
+        docker compose exec -T app php bin/console "$@"
+        ;;
+
+    sessions:prune)
+        docker compose exec -T app php bin/prune-sessions
+        ;;
+
+    composer)
+        shift
+        docker compose exec -T app composer "$@"
+        ;;
+
+    php)
+        shift
+        docker compose exec -T app php "$@"
+        ;;
+
+    shell)
+        docker compose exec app sh
+        ;;
+
+    *)
+        docker compose "$@"
+        ;;
+esac

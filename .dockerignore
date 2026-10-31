@@ -1,0 +1,17 @@
+.git
+.idea
+vendor
+.env
+.env.*
+**/node_modules
+**/dist
+var
+.phpunit.cache
+
+.aws
+.ssh
+.codex
+.agents
+auth.json
+docs/superpowers
+.php-cs-fixer.cache
