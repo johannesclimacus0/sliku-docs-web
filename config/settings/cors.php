@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 $defaultOrigins = ($_ENV['APP_ENV'] ?? 'production') === 'local'
-    ? 'http://localhost:5173,http://localhost:8081'
+    ? 'http://localhost:5173'
     : '';
 $origins = explode(',', $_ENV['CORS_ALLOWED_ORIGINS'] ?? $defaultOrigins);
 

@@ -1,81 +1,46 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import DocumentationView from '@/views/Docs/DocumentationView.vue'
+import NotFoundView from '@/views/Docs/NotFoundView.vue'
+import { scrollBehavior } from './scroll'
+
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
+    scrollBehavior,
     routes: [
         {
             path: '/',
-            name: 'overview',
-            component: () => import('@/views/OverviewView.vue'),
-            meta: { requiresAuth: true, title: 'Обзор' },
+            name: 'home',
+            component: DocumentationView,
         },
         {
-            path: '/notifications',
-            name: 'notifications',
-            component: () => import('@/views/NotificationsView.vue'),
-            meta: { requiresAuth: true, title: 'Уведомления' },
+            path: '/docs',
+            redirect: (to) => ({ name: 'home', query: to.query, hash: to.hash }),
         },
         {
-            path: '/profile',
-            name: 'profile',
-            component: () => import('@/views/ProfileView.vue'),
-            meta: { requiresAuth: true, title: 'Мой профиль' },
+            path: '/docs/:version',
+            redirect: (to) => ({
+                name: 'documentation',
+                params: { version: to.params.version, page: 'installation' },
+                query: to.query,
+                hash: to.hash,
+            }),
         },
         {
-            path: '/users',
-            name: 'users',
-            component: () => import('@/views/UsersView.vue'),
-            meta: { requiresAuth: true, admin: true, title: 'Пользователи' },
-        },
-        {
-            path: '/operations',
-            name: 'operations',
-            component: () => import('@/views/OperationsView.vue'),
-            meta: { requiresAuth: true, admin: true, title: 'Инструменты' },
-        },
-        {
-            path: '/login',
-            name: 'login',
-            component: () => import('@/views/LoginView.vue'),
-            meta: { authScreen: true, guest: true },
-        },
-        {
-            path: '/register',
-            name: 'register',
-            component: () => import('@/views/RegisterView.vue'),
-            meta: { authScreen: true, guest: true },
-        },
-        {
-            path: '/forgot-password',
-            name: 'forgot-password',
-            component: () => import('@/views/ForgotPasswordView.vue'),
-            meta: { authScreen: true },
-        },
-        {
-            path: '/reset-password',
-            name: 'reset-password',
-            component: () => import('@/views/ResetPasswordView.vue'),
-            meta: { authScreen: true },
-        },
-        {
-            path: '/verify-email',
-            name: 'verify-email',
-            component: () => import('@/views/VerifyEmailView.vue'),
-            meta: { authScreen: true },
+            path: '/docs/:version/:page',
+            name: 'documentation',
+            component: DocumentationView,
         },
         {
             path: '/:pathMatch(.*)*',
             name: 'not-found',
-            component: () => import('@/views/NotFoundView.vue'),
-            meta: { authScreen: true },
+            component: NotFoundView,
         },
     ],
 })
-router.beforeEach(async (to) => {
-    const auth = useAuthStore()
-    if (!auth.ready) await auth.restore()
-    if (to.meta.requiresAuth && !auth.user) return { name: 'login', query: { redirect: to.fullPath } }
-    if (to.meta.admin && auth.user?.role !== 'admin') return { name: 'overview' }
-    if (to.meta.guest && auth.user) return { name: 'overview' }
+
+router.afterEach((to, from) => {
+    if (to.name === 'not-found') document.title = 'Страница не найдена'
+    else if (to.path !== from.path) document.title = 'Документация'
 })
+
 export default router

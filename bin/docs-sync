@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [[ "${1:-}" == '--help' || "${1:-}" == '-h' ]]; then
+    echo 'Usage: ./run docs:sync VERSION [SOURCE_REPOSITORY]'
+    echo 'Export a committed local branch into var/docs/VERSION. SOURCE defaults to ../docs.'
+    exit 0
+fi
+if [[ $# -lt 1 || $# -gt 2 || ! "$1" =~ ^[a-z0-9]+([.-][a-z0-9]+)*$ ]]; then
+    echo 'Provide a branch name such without slashes.' >&2
+    exit 1
+fi
+
+project_root="$(cd "$(dirname "$0")/.." && pwd)"
+docs_version="$1"
+docs_source="${2:-$project_root/../docs}"
+docs_commit="$(git -C "$docs_source" rev-parse --verify "refs/heads/${docs_version}^{commit}")"
+docs_root="$project_root/var/docs"
+mkdir -p "$docs_root"
+docs_target="$docs_root/$docs_version"
+if [[ -L "$docs_target" || ( -e "$docs_target" && ! -d "$docs_target" ) ]]; then
+    echo 'The destination must be a regular directory.' >&2
+    exit 1
+fi
+docs_lock="$docs_root/.lock-${docs_version}"
+if ! mkdir "$docs_lock" 2>/dev/null; then
+    echo "Another export of $docs_version is in progress ($docs_lock)." >&2
+    exit 1
+fi
+docs_stage=''
+docs_backup=''
+
+cleanup() {
+    if [[ -n "$docs_backup" && -d "$docs_backup" && ! -e "$docs_target" ]]; then
+        mv -- "$docs_backup" "$docs_target"
+    fi
+    if [[ -n "$docs_stage" ]]; then
+        rm -rf -- "$docs_stage"
+    fi
+    if [[ -n "$docs_backup" && -d "$docs_backup" ]]; then
+        rm -rf -- "$docs_backup"
+    fi
+    rmdir -- "$docs_lock"
+}
+trap cleanup EXIT
+docs_stage="$(mktemp -d "$docs_root/.sync-${docs_version}.XXXXXX")"
+
+git -C "$docs_source" archive --format=tar "$docs_commit" | tar -x -C "$docs_stage"
+if [[ ! -f "$docs_stage/documentation.md" || -L "$docs_stage/documentation.md" ]]; then
+    echo 'The branch must contain documentation.md at its root.' >&2
+    exit 1
+fi
+chmod 0755 "$docs_stage"
+if [[ -d "$docs_target" ]]; then
+    docs_backup="$(mktemp -d "$docs_root/.previous-${docs_version}.XXXXXX")"
+    rmdir -- "$docs_backup"
+    mv -- "$docs_target" "$docs_backup"
+fi
+mv -- "$docs_stage" "$docs_target"
+echo "Prepared $docs_version from $docs_commit in var/docs/$docs_version"
+echo 'Enable the version in config/settings/docs.php when ready.'

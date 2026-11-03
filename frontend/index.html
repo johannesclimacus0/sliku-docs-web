@@ -3,7 +3,23 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title></title>
+        <script>
+            ;(() => {
+                let saved
+                try {
+                    saved = localStorage.getItem('sliku-docs-theme')
+                } catch {}
+                const theme =
+                    saved === 'light' || saved === 'dark'
+                        ? saved
+                        : window.matchMedia('(prefers-color-scheme: dark)').matches
+                          ? 'dark'
+                          : 'light'
+                document.documentElement.dataset.docsTheme = theme
+                document.documentElement.style.backgroundColor = theme === 'dark' ? '#101b20' : '#ffffff'
+            })()
+        </script>
+        <title>Документация Sliku</title>
     </head>
     <body>
         <div id="app"></div>

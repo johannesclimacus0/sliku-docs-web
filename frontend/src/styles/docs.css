@@ -1,0 +1,218 @@
+html:has(.docs-page) {
+    @apply bg-docs-background [scrollbar-gutter:stable_both-edges];
+    color-scheme: light;
+}
+
+html[data-docs-theme='dark'] {
+    --color-docs-background: #101b20;
+    --color-docs-accent: #52d6cb;
+    --color-docs-heading: #e0eeee;
+    --color-docs-ink: #bacdd0;
+    --color-docs-muted: #849fa4;
+    --color-docs-line: #293d43;
+    --color-docs-soft: #16292f;
+    --color-docs-code: #13242a;
+    --color-docs-inline: #30212f;
+    --color-docs-inline-ink: #f29bc3;
+    --color-docs-quote-ink: #a1cbc5;
+    --color-docs-link-line: #326d70;
+    --color-docs-striped: #14252b;
+    --color-docs-error-ink: #f29bb9;
+    --color-docs-selection: #19544f;
+    --color-docs-selection-ink: #d9fffa;
+}
+
+html[data-docs-theme='dark']:has(.docs-page) {
+    color-scheme: dark;
+}
+
+.docs-page ::selection {
+    @apply bg-docs-selection text-docs-selection-ink;
+}
+
+.docs-page :focus-visible {
+    @apply outline-miku;
+}
+
+.docs-content {
+    @apply text-base leading-[1.8] text-docs-ink [overflow-wrap:break-word];
+}
+
+.docs-content > :first-child {
+    @apply mt-0;
+}
+
+.docs-content > :last-child {
+    @apply mb-0;
+}
+
+.docs-content h1,
+.docs-content h2,
+.docs-content h3,
+.docs-content h4 {
+    @apply scroll-mt-8 text-docs-heading leading-snug font-semibold tracking-[-0.025em] text-balance;
+}
+
+.docs-content h1 {
+    @apply mb-9 text-[30px] leading-[1.2] tracking-[-0.035em] md:text-[36px];
+}
+
+.docs-content h2 {
+    @apply mt-12 mb-4 text-[23px] md:text-[25px];
+}
+
+.docs-content h1 + h2 {
+    @apply mt-0;
+}
+
+.docs-content h1 + p {
+    @apply mb-8 text-[17px] leading-[1.8] text-docs-muted;
+}
+
+.docs-content h3 {
+    @apply mt-8 mb-3 text-xl;
+}
+
+.docs-content h4 {
+    @apply mt-6 mb-3 text-[17px];
+}
+
+.docs-content p,
+.docs-content ul,
+.docs-content ol,
+.docs-content pre,
+.docs-content blockquote,
+.docs-content table {
+    @apply mb-5;
+}
+
+.docs-content ul,
+.docs-content ol {
+    @apply pl-6;
+}
+
+.docs-content ul {
+    @apply list-disc;
+}
+
+.docs-content ol {
+    @apply list-decimal;
+}
+
+.docs-content li {
+    @apply my-1 pl-1 marker:text-miku;
+}
+
+.docs-content li > p {
+    @apply my-2;
+}
+
+.docs-content li > :last-child {
+    @apply mb-0;
+}
+
+.docs-content li > ul,
+.docs-content li > ol {
+    @apply mt-2 mb-0;
+}
+
+.docs-content strong {
+    @apply font-semibold text-docs-heading;
+}
+
+.docs-content a {
+    @apply font-medium text-docs-accent underline decoration-docs-link-line decoration-1 underline-offset-4 hover:decoration-miku;
+}
+
+.docs-content :not(pre) > code {
+    @apply rounded bg-docs-inline px-[5px] py-0.5 text-[0.85em] font-normal text-docs-inline-ink;
+}
+
+.docs-content pre {
+    @apply my-6 max-w-full overflow-x-auto rounded-lg border border-docs-line bg-docs-code px-5 py-[18px] text-[13px] leading-6 whitespace-pre text-docs-ink tabular-nums md:px-6 md:text-sm;
+}
+
+.docs-content pre code {
+    @apply block border-0 bg-transparent p-0 text-inherit [font-variant-ligatures:none] [overflow-wrap:normal];
+}
+
+.docs-content pre + p {
+    @apply mt-6;
+}
+
+.docs-code-block {
+    @apply my-6 min-w-0 overflow-hidden rounded-lg border border-docs-line bg-docs-code;
+}
+
+.docs-code-toolbar {
+    @apply flex min-h-10 items-center justify-between gap-4 border-b border-docs-line bg-docs-soft px-4 py-1.5;
+}
+
+.docs-code-language {
+    @apply font-mono text-[11px] font-medium tracking-wide text-docs-accent;
+}
+
+.docs-copy-button {
+    @apply inline-flex size-8 shrink-0 items-center justify-center rounded border border-transparent text-docs-muted transition-colors hover:border-miku hover:bg-docs-background hover:text-docs-accent disabled:cursor-wait;
+}
+
+.docs-copy-button svg {
+    @apply size-4;
+}
+
+.docs-copy-button[data-copy-state='copied'] {
+    @apply text-docs-accent;
+}
+
+.docs-copy-button[data-copy-state='error'] {
+    @apply text-docs-error-ink;
+}
+
+.docs-code-block pre {
+    @apply m-0 rounded-none border-0;
+}
+
+.docs-content blockquote {
+    @apply my-6 rounded-r-lg border-l-[3px] border-miku bg-docs-soft px-5 py-4 text-[15px] leading-7 text-docs-quote-ink;
+}
+
+.docs-content blockquote > :last-child {
+    @apply mb-0;
+}
+
+.docs-content table {
+    @apply my-6 block max-w-full border-collapse overflow-x-auto text-sm leading-6;
+}
+
+.docs-content th,
+.docs-content td {
+    @apply border-b border-docs-line px-4 py-3 text-left align-top;
+}
+
+.docs-content th {
+    @apply border-t bg-docs-soft font-semibold text-docs-heading;
+}
+
+.docs-content tbody tr:nth-child(even) {
+    @apply bg-docs-striped;
+}
+
+.docs-content hr {
+    @apply my-10 border-0 border-t border-docs-line;
+}
+
+.docs-content img {
+    @apply my-6 h-auto max-w-full rounded-lg;
+}
+
+.docs-content pre code span {
+    color: var(--shiki-light, inherit);
+    font-style: var(--shiki-light-font-style, inherit);
+    font-weight: var(--shiki-light-font-weight, inherit);
+}
+
+html[data-docs-theme='dark'] .docs-content pre code span {
+    color: var(--shiki-dark, inherit);
+    font-style: var(--shiki-dark-font-style, inherit);
+    font-weight: var(--shiki-dark-font-weight, inherit);
+}

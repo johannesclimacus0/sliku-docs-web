@@ -16,18 +16,9 @@ export default defineConfig({
     },
     server: {
         proxy: {
-            '/media': {
-                target: backend,
-                changeOrigin: true,
-            },
-            '/__clockwork': {
-                target: backend,
-                changeOrigin: true,
-            },
             '/api': {
                 target: backend,
                 changeOrigin: true,
-                rewrite: (path) => path.replace(/^\/api/, ''),
             },
         },
     },

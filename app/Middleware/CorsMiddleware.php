@@ -13,8 +13,8 @@ use Slim\Psr7\Response;
 
 class CorsMiddleware implements MiddlewareInterface
 {
-    private const string ALLOWED_METHODS = 'GET, HEAD, POST, PATCH, DELETE, OPTIONS';
-    private const string ALLOWED_HEADERS = 'Content-Type, Authorization, X-Request-ID';
+    private const string ALLOWED_METHODS = 'GET, HEAD, OPTIONS';
+    private const string ALLOWED_HEADERS = 'X-Request-ID';
 
     public function __construct(private Config $config)
     {
@@ -47,8 +47,7 @@ class CorsMiddleware implements MiddlewareInterface
     {
         $response = $response
             ->withHeader('Access-Control-Allow-Origin', $origin)
-            ->withHeader('Access-Control-Allow-Credentials', 'true')
-            ->withHeader('Access-Control-Expose-Headers', 'Retry-After, X-Request-ID, X-Response-Time, X-Clockwork-Id, X-Clockwork-Version, X-Clockwork-Path')
+            ->withHeader('Access-Control-Expose-Headers', 'X-Request-ID, X-Response-Time')
             ->withAddedHeader('Vary', 'Origin');
 
         if ($preflight) {

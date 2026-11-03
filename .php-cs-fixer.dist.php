@@ -11,19 +11,10 @@ $finder = Finder::create()
         __DIR__.'/src',
         __DIR__.'/config',
         __DIR__.'/routes',
-        __DIR__.'/database',
         __DIR__.'/public',
-        __DIR__.'/tools',
-        __DIR__.'/tests',
     ])
     ->append([
         __FILE__,
-        __DIR__.'/bin/console',
-        __DIR__.'/bin/doctrine',
-        __DIR__.'/bin/fresh',
-        __DIR__.'/bin/prune-sessions',
-        __DIR__.'/bin/test-database',
-        __DIR__.'/bin/ui',
         __DIR__.'/bin/setup',
     ]);
 

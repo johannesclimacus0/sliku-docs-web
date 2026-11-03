@@ -9,3 +9,6 @@
 /.aws/
 /.codex/
 /.agents/
+
+# Editor backup files
+*~

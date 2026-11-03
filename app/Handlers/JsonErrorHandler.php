@@ -5,12 +5,7 @@ declare(strict_types=1);
 namespace App\Handlers;
 
 use App\Exceptions\ApiErrorException;
-use App\Exceptions\ConflictException;
-use App\Exceptions\ForbiddenException;
-use App\Exceptions\InvalidInputException;
 use App\Exceptions\NotFoundException;
-use App\Exceptions\UnauthorizedException;
-use App\Exceptions\ValidationException;
 use App\Http\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -37,15 +32,7 @@ class JsonErrorHandler implements ErrorHandlerInterface
         bool $logErrorDetails,
     ): ResponseInterface {
         if ($exception instanceof ApiErrorException) {
-            $status = match (true) {
-                $exception instanceof UnauthorizedException => 401,
-                $exception instanceof ForbiddenException => 403,
-                $exception instanceof ValidationException => 422,
-                $exception instanceof InvalidInputException => 400,
-                $exception instanceof NotFoundException => 404,
-                $exception instanceof ConflictException => 409,
-                default => 500,
-            };
+            $status = $exception instanceof NotFoundException ? 404 : 500;
             $code = $status < 500 ? $exception->errorCode() : 'INTERNAL_SERVER_ERROR';
             $message = $status < 500 ? $exception->getMessage() : 'Внутренняя ошибка сервера';
         } elseif ($exception instanceof HttpException) {
@@ -53,7 +40,7 @@ class JsonErrorHandler implements ErrorHandlerInterface
             $code = $status < 500 ? 'HTTP_' . $status : 'INTERNAL_SERVER_ERROR';
             $message = match ($status) {
                 400 => 'Некорректный запрос',
-                401 => 'Необходимо войти в аккаунт',
+                401 => 'Требуется аутентификация',
                 403 => 'Недостаточно прав',
                 404 => 'Ресурс не найден',
                 405 => 'Метод запроса не поддерживается',
@@ -86,7 +73,6 @@ class JsonErrorHandler implements ErrorHandlerInterface
             $code,
             $message,
             $status,
-            $exception instanceof ValidationException ? $exception->details() : null,
         );
     }
 }
